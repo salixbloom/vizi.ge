@@ -1,0 +1,24 @@
+{
+  "version": 8,
+  "name": "vizi-basemap",
+  "sources": {
+    "basemap": {
+      "type": "raster",
+      "tiles": ["/tiles/{z}/{x}/{y}.png"],
+      "tileSize": 256,
+      "attribution": "© light-maps"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#1a1a1a" }
+    },
+    {
+      "id": "basemap",
+      "type": "raster",
+      "source": "basemap"
+    }
+  ]
+}
