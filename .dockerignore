@@ -1,0 +1,27 @@
+# Rebuilt inside the image
+node_modules
+.next
+out
+
+# VCS / local tooling
+.git
+.gitignore
+docs
+tests
+*.tsbuildinfo
+
+# Secrets & local data — never bake into the image
+.env
+.env.*
+!.env.example
+data
+
+# Windows/WSL "mark of the web" sidecars
+*:Zone.Identifier
+
+# Docker meta
+Dockerfile
+.dockerignore
+docker-compose*.yml
+README.md
+LICENSE

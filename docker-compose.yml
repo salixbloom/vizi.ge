@@ -1,0 +1,60 @@
+# docker compose for vizi.ge
+#
+#   docker compose up -d --build
+#
+# The `app` service runs standalone — the map's raster/vector layers are a
+# silent no-op until the `tiles` (light-maps) service is serving, so you can
+# bring the site up first and wire up tiles later.
+#
+# Secrets/config come from .env (see .env.example). NEXT_PUBLIC_MAP_STYLE_URL is
+# build-time only, so it's passed as a build arg below — changing it needs a
+# rebuild, not just a restart.
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        # Bundled style by default; set to /tiles/style.json if light-maps
+        # serves a full style document.
+        NEXT_PUBLIC_MAP_STYLE_URL: ${NEXT_PUBLIC_MAP_STYLE_URL:-/map-style.json}
+    image: vizi
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # Runtime config from .env ...
+    env_file:
+      - .env
+    # ... with the few values that must differ inside the compose network.
+    environment:
+      NODE_ENV: production
+      # Reach the tile server by its compose service name, not 127.0.0.1.
+      TILE_SERVER_URL: http://tiles:8080
+      DATABASE_PATH: /app/data/vizi.db
+      UPLOAD_DIR: /app/data/uploads
+    volumes:
+      # SQLite DB + uploaded images.
+      - vizi-data:/app/data
+    depends_on:
+      - tiles
+
+  # Self-hosted light-maps tile server (https://github.com/salixbloom/light-maps).
+  # No official image is published — point `image:` at one you've built/pushed,
+  # or replace with a `build:` context for the light-maps repo.
+  tiles:
+    image: ${LIGHT_MAPS_IMAGE:-salixbloom/light-maps:latest}
+    restart: unless-stopped
+    # Serve the baked archives; set name = file stem, so they must be reachable
+    # at /tiles/wa-rasters/... and /tiles/washington/... (see README).
+    command: >
+      lm-serve /data/wa-rasters.pmtiles /data/washington.pmtiles
+      --addr 0.0.0.0:8080 --cors "*"
+    volumes:
+      # Directory containing wa-rasters.pmtiles and washington.pmtiles.
+      - ${TILES_DATA_DIR:-./tiles-data}:/data:ro
+    # Not published to the host — only the app talks to it over the compose net.
+    expose:
+      - "8080"
+
+volumes:
+  vizi-data:
