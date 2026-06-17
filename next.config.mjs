@@ -8,9 +8,12 @@ const nextConfig = {
     return [
       // Proxy MapLibre tile/style/glyph/sprite requests to the separate light-maps service
       // so the browser only ever talks to one origin.
+      // lm-serve serves under /tiles/<set>/<z>/<x>/<y>.<ext> (here the WA land-cover
+      // set is /tiles/wa-rasters/<z>/<x>/<y>.webp), so keep the /tiles prefix when
+      // forwarding (do NOT strip it).
       {
         source: "/tiles/:path*",
-        destination: `${TILE_SERVER_URL}/:path*`,
+        destination: `${TILE_SERVER_URL}/tiles/:path*`,
       },
     ];
   },

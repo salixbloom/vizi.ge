@@ -46,27 +46,44 @@ npm run dev                   # http://localhost:3000
 light-maps runs as its own process; the Next app proxies `/tiles/*` to it
 (`next.config.mjs` → `rewrites`), so the browser only talks to one origin.
 
+The basemap is composed from **two** light-maps archives, served together by a
+single `lm-serve` process (one set per file, named after the file stem):
+
+- `wa-rasters.pmtiles` — land-cover **raster** underlay (`lm-bake raster`).
+- `washington.pmtiles` — roads & boundaries **vector** overlay (`lm-bake`):
+  layers `boundaries`, `county`, `city`, `sr` (state routes), `ramps`.
+
 ```bash
-# example — run light-maps with the WA tile dataset on :8080, then:
-# TILE_SERVER_URL=http://127.0.0.1:8080
+# Bake both (see light-maps/scripts/bake-wa-rasters.sh for the raster), then:
+lm-serve ~/data/wa-rasters.pmtiles washington.pmtiles \
+  --addr 127.0.0.1:8080 --cors "*"
+# TILE_SERVER_URL=http://127.0.0.1:8080   (must match the --addr above)
 ```
 
-The bundled `public/map-style.json` assumes **raster** tiles at
-`/tiles/{z}/{x}/{y}.png`. Confirm this against your light-maps build:
+> **`--addr 127.0.0.1:8080` is required.** lm-serve defaults to `:3000`, which
+> collides with the Next dev server; `TILE_SERVER_URL` here expects `:8080`.
+> The set name is the **file stem**, so the files must be `wa-rasters.pmtiles`
+> and `washington.pmtiles` to be reachable at `/tiles/wa-rasters/...` and
+> `/tiles/washington/...` — the source layers `public/map-style.json` references.
 
-- If light-maps serves **vector tiles / PMTiles**, replace the source in
+The bundled `public/map-style.json` consumes **raster WebP** land-cover tiles at
+`/tiles/wa-rasters/{z}/{x}/{y}.webp` (z0–14, 256px) plus **vector** road/boundary
+tiles at `/tiles/washington/{z}/{x}/{y}.mvt`. If you change the light-maps build:
+
+- For a different **vector / raster** layout, edit the sources/layers in
   `public/map-style.json` accordingly (and add `glyphs`/`sprite` if you use
   text/symbol layers).
 - If light-maps serves a **full style.json**, skip the bundled style and set
   `NEXT_PUBLIC_MAP_STYLE_URL=/tiles/style.json` — `components/Map.tsx` reads it.
 
-> This is the one part of the build intentionally left configurable, since the
-> exact light-maps tile format should be verified against its docs.
-
 ## How it works
 
 - **Public map** (`/`) — approved sightings load from `GET /api/locations`
   (GeoJSON, optional `?bbox=`), clustered, click for photo + details.
+- **Place search** — the search box autocompletes via `GET /api/geocode?q=`, a
+  server-side proxy to the Photon (OpenStreetMap) geocoder. Results are bounded
+  to `WA_BBOX` and cached; selecting one flies the map there and drops a marker.
+  No API key. Attribution: search data © OpenStreetMap contributors (Photon).
 - **Submissions** — a soft "hardware ID" (browser fingerprint + on-device UUID,
   hashed) is sent with each `POST /api/submissions`. The server enforces a daily
   per-device cap, validates the point is inside WA, re-encodes photos with sharp

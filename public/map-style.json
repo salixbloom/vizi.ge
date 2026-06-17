@@ -2,11 +2,20 @@
   "version": 8,
   "name": "vizi-basemap",
   "sources": {
-    "basemap": {
+    "wa-rasters": {
       "type": "raster",
-      "tiles": ["/tiles/{z}/{x}/{y}.png"],
+      "tiles": ["/tiles/wa-rasters/{z}/{x}/{y}.webp"],
       "tileSize": 256,
-      "attribution": "© light-maps"
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "WA land cover © Ecopia"
+    },
+    "wa-vectors": {
+      "type": "vector",
+      "tiles": ["/tiles/washington/{z}/{x}/{y}.mvt"],
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "WSDOT / WA roads & boundaries"
     }
   },
   "layers": [
@@ -16,9 +25,64 @@
       "paint": { "background-color": "#1a1a1a" }
     },
     {
-      "id": "basemap",
+      "id": "wa-rasters",
       "type": "raster",
-      "source": "basemap"
+      "source": "wa-rasters",
+      "paint": { "raster-opacity": 0.85 }
+    },
+    {
+      "id": "boundaries",
+      "type": "line",
+      "source": "wa-vectors",
+      "source-layer": "boundaries",
+      "paint": {
+        "line-color": "#5a5a5a",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.4, 12, 1.2],
+        "line-dasharray": [3, 2]
+      }
+    },
+    {
+      "id": "roads-city",
+      "type": "line",
+      "source": "wa-vectors",
+      "source-layer": "city",
+      "minzoom": 9,
+      "paint": {
+        "line-color": "#6b6b6b",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.3, 14, 1.5]
+      }
+    },
+    {
+      "id": "roads-county",
+      "type": "line",
+      "source": "wa-vectors",
+      "source-layer": "county",
+      "minzoom": 7,
+      "paint": {
+        "line-color": "#8a8a8a",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 0.4, 14, 2]
+      }
+    },
+    {
+      "id": "ramps",
+      "type": "line",
+      "source": "wa-vectors",
+      "source-layer": "ramps",
+      "minzoom": 10,
+      "paint": {
+        "line-color": "#d9a441",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.5, 14, 2]
+      }
+    },
+    {
+      "id": "state-routes",
+      "type": "line",
+      "source": "wa-vectors",
+      "source-layer": "sr",
+      "paint": {
+        "line-color": "#e8b84b",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.6, 10, 2, 14, 4]
+      }
     }
   ]
 }
